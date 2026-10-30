@@ -1,9 +1,13 @@
 package com.zonic.ai
 
 import android.content.SharedPreferences
+import android.graphics.Color
+import android.graphics.Typeface
 import android.os.Bundle
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
@@ -11,57 +15,53 @@ import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit.SharedPrefrences sharedPreferences: SharedPreferences
+    private lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Stonic AI Style Dynamic UI Layout in Kotlin to prevent any XML folder errors
-        val linearLayout = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            setBackgroundColor(android.graphics.Color.parseColor("#0B0F19"))
+        val linearLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.parseColor("#0B0F19"))
             setPadding(32, 32, 32, 32)
-            layoutParams = android.view.ViewGroup.LayoutParams(
-                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
             )
         }
 
-        // Title Header
         val titleText = TextView(this).apply {
             text = "ZONIC AI (JARVIS)"
             textSize = 20f
-            setTextColor(android.graphics.Color.parseColor("#00E5FF"))
-            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTextColor(Color.parseColor("#00E5FF"))
+            setTypeface(null, Typeface.BOLD)
         }
         linearLayout.addView(titleText)
 
-        // Subtitle Status
         val statusText = TextView(this).apply {
             text = "Autonomous Multi-Agent Online"
             textSize = 12f
-            setTextColor(android.graphics.Color.parseColor("#00E676"))
+            setTextColor(Color.parseColor("#00E676"))
             setPadding(0, 0, 0, 24)
         }
         linearLayout.addView(statusText)
 
-        // API Key Input Layout
-        val keyLayout = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.HORIZONTAL
-            layoutParams = android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        val keyLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
             )
         }
 
         val apiKeyInput = EditText(this).apply {
             hint = "Gemini API Key yahan dalein..."
-            setTextColor(android.graphics.Color.WHITE)
-            setHintTextColor(android.graphics.Color.parseColor("#757575"))
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.parseColor("#757575"))
             textSize = 13f
-            layoutParams = android.widget.LinearLayout.LayoutParams(
+            layoutParams = LinearLayout.LayoutParams(
                 0,
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
                 1f
             )
         }
@@ -69,16 +69,15 @@ class MainActivity : AppCompatActivity() {
 
         val btnSaveKey = Button(this).apply {
             text = "SAVE"
-            setBackgroundColor(android.graphics.Color.parseColor("#00E5FF"))
-            setTextColor(android.graphics.Color.parseColor("#0B0F19"))
+            setBackgroundColor(Color.parseColor("#00E5FF"))
+            setTextColor(Color.parseColor("#0B0F19"))
         }
         keyLayout.addView(btnSaveKey)
         linearLayout.addView(keyLayout)
 
-        // Chat Response Box inside ScrollView
         val scrollView = ScrollView(this).apply {
-            layoutParams = android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
                 0,
                 1f
             ).apply {
@@ -88,29 +87,28 @@ class MainActivity : AppCompatActivity() {
 
         val chatResponseBox = TextView(this).apply {
             text = "Zonic: Assalam o Alaikum! Main aapka autonomous assistant hoon. WhatsApp, Daraz, aur baqi saare tasks ke liye tayyar hoon. API key enter karein aur mujhe hukm dein!"
-            setTextColor(android.graphics.Color.parseColor("#E0E0E0"))
+            setTextColor(Color.parseColor("#E0E0E0"))
             textSize = 14f
         }
         scrollView.addView(chatResponseBox)
         linearLayout.addView(scrollView)
 
-        // User Input & Send Layout
-        val inputLayout = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.HORIZONTAL
-            layoutParams = android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        val inputLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
             )
         }
 
         val userInputBox = EditText(this).apply {
             hint = "Zonic ko hukum dein..."
-            setTextColor(android.graphics.Color.WHITE)
-            setHintTextColor(android.graphics.Color.parseColor("#757575"))
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.parseColor("#757575"))
             textSize = 14f
-            layoutParams = android.widget.LinearLayout.LayoutParams(
+            layoutParams = LinearLayout.LayoutParams(
                 0,
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
                 1f
             )
         }
@@ -118,15 +116,39 @@ class MainActivity : AppCompatActivity() {
 
         val btnSend = Button(this).apply {
             text = "SEND"
-            setBackgroundColor(android.graphics.Color.parseColor("#00E5FF"))
-            setTextColor(android.graphics.Color.parseColor("#0B0F19"))
+            setBackgroundColor(Color.parseColor("#00E5FF"))
+            setTextColor(Color.parseColor("#0B0F19"))
         }
         inputLayout.addView(btnSend)
         linearLayout.addView(inputLayout)
 
-        // Set Content View directly via Code (No XML layout file needed, zero error guarantee!)
         setContentView(linearLayout)
 
-        // SharedPreferences for API Key Saving
-        val prefs = getSharedPreferences("ZonicPrefs", MODE_PRIVATE)
-        val savedKey = prefs.getString("
+        sharedPreferences = getSharedPreferences("ZonicPrefs", MODE_PRIVATE)
+        val savedKey = sharedPreferences.getString("gemini_key", "")
+        if (!savedKey.isNullOrEmpty()) {
+            apiKeyInput.setText(savedKey)
+            chatResponseBox.text = "Zonic: API Key pehle se saved hai. Hukam dein!"
+        }
+
+        btnSaveKey.setOnClickListener {
+            val key = apiKeyInput.text.toString().trim()
+            if (key.isNotEmpty()) {
+                sharedPreferences.edit().putString("gemini_key", key).apply()
+                Toast.makeText(this, "API Key Save Ho Gayi!", Toast.LENGTH_SHORT).show()
+                chatResponseBox.text = "Zonic: Key save ho chuki hai. Ab aap WhatsApp, Daraz ya kisi bhi kaam ke liye keh sakte hain."
+            } else {
+                Toast.makeText(this, "Pehle valid key dalein!", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        btnSend.setOnClickListener {
+            val query = userInputBox.text.toString().trim()
+            if (query.isNotEmpty()) {
+                chatResponseBox.append("\n\nYou: $query")
+                chatResponseBox.append("\n\nZonic: Aapka hukm mil gaya hai. ' $query ' par kaam shuru kiya ja raha hai...")
+                userInputBox.text.clear()
+            }
+        }
+    }
+}
