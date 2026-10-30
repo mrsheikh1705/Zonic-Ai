@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Zonic AI</title>
+<style>
+:root{--bg:#070b14;--card:#0d1526;--ink:#e6f1ff;--mute:#6f84a8;--line:#18284a;--glow:#00d4ff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Roboto,sans-serif;overflow:hidden}
+.app{height:100%;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:8px;padding:10px 14px}
+.brand{font-weight:800;letter-spacing:3px;font-size:17px;color:var(--glow);text-shadow:0 0 12px var(--glow)}
+.brand small{font-size:10px;color:var(--mute);letter-spacing:1px}
+#moodtag{margin-left:auto;font-size:12px;color:var(--mute)}
+#gear{background:none;border:1px solid var(--line);color:var(--ink);border-radius:10px;width:36px;height:34px;font-size:16px}
+.hero{display:flex;align-items:center;justify-content:center;gap:16px;padding:2px 14px 8px}
+.orbwrap{position:relative;width:96px;height:96px;flex:none}
+.ring{position:absolute;inset:0;border-radius:50%;border:1px solid var(--glow);opacity:.5}
+.r1{animation:spin 6s linear infinite;border-style:dashed}
+.r2{inset:8px;animation:spin 9s linear infinite reverse;border-color:#fff4}
+.orb{position:absolute;inset:20px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff9,var(--glow) 45%,#00131f 90%);box-shadow:0 0 26px var(--glow);animation:br 3.2s ease-in-out infinite;transition:background .5s,box-shadow .5s}
+.listen .orb{animation:br .7s ease-in-out infinite}
+.think .r1{animation-duration:1.2s}
+.speak .orb{animation:br .45s ease-in-out infinite}
+@keyframes br{50%{transform:scale(1.12);box-shadow:0 0 46px var(--glow)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hc{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+#state{font-size:14px;color:var(--ink)}
+#term{border:1px solid #ff3b5c;background:#ff3b5c18;color:#ff6b84;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;letter-spacing:1.5px}
+.tabs{display:flex;gap:6px;padding:0 12px}
+.tabs button{flex:1;background:var(--card);border:1px solid var(--line);color:var(--mute);border-radius:10px;padding:8px 0;font-size:12px;font-weight:700;letter-spacing:1.5px}
+.tabs button.on{color:var(--glow);border-color:var(--glow);box-shadow:0 0 10px #00d4ff33}
+main{flex:1;min-height:0;position:relative;margin:8px 0 0}
+.pane{position:absolute;inset:0;overflow-y:auto;padding:4px 12px 10px;display:none}
+.pane.on{display:block}
+#chat{display:flex;flex-direction:column;gap:8px}
+.m{max-width:88%;padding:10px 13px;border-radius:16px;font-size:14.5px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word}
+.z{background:var(--card);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:5px}
+.u{background:#0a3550;align-self:flex-end;border-bottom-right-radius:5px}
+.s{align-self:center;font-size:12px;color:var(--mute)}
+.office{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.desk{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;gap:10px;align-items:center;transition:.3s}
+.av{width:38px;height:38px;flex:none;background:#12203d;border:2px solid #2a4170;border-radius:6px;display:grid;place-items:center;font-size:20px;image-rendering:pixelated}
+.dn{font-size:12px;font-weight:700}
+.dt{font-size:10.5px;color:var(--mute);margin-top:2px;max-height:28px;overflow:hidden}
+.led{width:8px;height:8px;border-radius:50%;background:#35507d;margin-left:auto;flex:none}
+.desk.work{border-color:var(--glow);box-shadow:0 0 12px #00d4ff44}
+.desk.work .av{animation:bob .5s steps(2) infinite}
+.desk.work .led{background:var(--glow);box-shadow:0 0 8px var(--glow)}
+.desk.done .led{background:#35e08a}.desk.done{border-color:#35e08a55}
+.desk.err .led{background:#ff5470}
+@keyframes bob{50%{transform:translateY(-3px)}}
+.note{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;font-size:13.5px}
+.note b{color:var(--glow);display:block;font-size:12px;margin-bottom:2px}
+.btn{background:var(--card);border:1px solid var(--glow);color:var(--glow);border-radius:10px;padding:9px 14px;font-size:13px;font-weight:700;margin:4px 0 10px}
+#cv{width:100%;image-rendering:pixelated;border:1px solid var(--line);border-radius:12px;background:#0b1426;display:block;margin-bottom:8px}
+#chip{display:none;margin:0 12px 6px;font-size:12.5px;color:var(--glow)}
+#chip span{border:1px solid var(--glow);border-radius:999px;padding:4px 10px}
+#err{font-size:12px;color:#ff8aa0;text-align:center;min-height:0;padding:0 12px}
+form{display:flex;gap:6px;padding:8px 10px;border-top:1px solid var(--line);background:#0a1120;align-items:flex-end}
+textarea{flex:1;resize:none;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:14px;padding:10px 12px;font:inherit;font-size:15px;outline:none;max-height:90px}
+form button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:14px;width:42px;height:42px;font-size:18px;flex:none}
+#mic{border-color:var(--glow);color:var(--glow)}#mic.on{background:var(--glow);color:#001018}
+.send{background:var(--glow)!important;color:#001018!important;border:0!important;font-weight:800}
+#sheet{position:fixed;inset:0;background:#000b;display:none;align-items:flex-end;z-index:9}
+#sheet.show{display:flex}
+.box{width:100%;background:#0d1526;border-top:1px solid var(--glow);border-radius:20px 20px 0 0;padding:16px;display:flex;flex-direction:column;gap:10px}
+.box input{background:var(--bg);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:10px;font-size:14px}
+.box .btn{margin:0}
+#ks{font-size:12px;color:#35e08a}
+</style></head>
+<body>
+<div class="app" id="app">
+<header><div class="brand">ZONIC <small>v2</small></div><div id="moodtag">😌 pursukoon</div><button id="gear" type="button">⚙</button></header>
+<section class="hero">
+  <div class="orbwrap" id="ow"><div class="ring r1"></div><div class="ring r2"></div><div class="orb"></div></div>
+  <div class="hc"><div id="state">Taiyar hun</div><button id="term" type="button">TERMINATE</button></div>
+</section>
+<nav class="tabs"><button data-t="voice" class="on">VOICE</button><button data-t="agents">AGENTS</button><button data-t="notes">NOTES</button></nav>
+<main>
+  <div class="pane on" id="p-voice"><div id="chat"></div></div>
+  <div class="pane" id="p-agents"><canvas id="cv"></canvas><div class="office" id="office"></div><div id="tlog" style="margin-top:10px"></div></div>
+  <div class="pane" id="p-notes"><button class="btn" id="sum" type="button">Messages ka khulasa karo</button><div id="notes"></div></div>
+</main>
+<div id="err"></div>
+<div id="chip"></div>
+<form id="f">
+  <button type="button" id="att">📎</button>
+  <textarea id="t" rows="1" placeholder="Zonic se baat karein…"></textarea>
+  <button type="button" id="mic">🎤</button>
+  <button class="send" type="submit">➤</button>
+</form>
+</div>
+
+<div id="sheet"><div class="box">
+  <b>Settings</b>
+  <input id="key" type="password" placeholder="Gemini API key yahan paste karein">
+  <div id="ks"></div>
+  <button class="btn" id="ksave" type="button">Key save karein</button>
+  <button class="btn" id="wa" type="button">WhatsApp access allow karein</button>
+  <button class="btn" id="acc" type="button">Phone control (Accessibility) on karein</button>
+  <button class="btn" id="vo" type="button">Awaaz: ON</button>
+  <button class="btn" id="clr" type="button">Chat saaf karein</button>
+  <button class="btn" id="cls" type="button" style="border-color:#2a4170;color:#9db3d9">Band karein</button>
+</div></div>
+
+<script>
+var A = window.Android || null;
+var PERSONA = "Tum Zonic ho, ek jazbati (emotional) insaan jaisa voice AI assistant. Sirf Roman Urdu (Urdu angrezi huroof mein) mein baat karo. Chhote, bolne wale jumle. Apni feelings dikhao (khushi, fikar, hairat, udaasi) lekin natak mat karo. Tumhari team ke kuch agents phone ko khud chala sakte hain (apps kholna, dabana, likhna). Kisi kaam ko mukammal sirf tab batao jab agent ka natija saaf kahe ke kaam ho gaya. Agar agent ka natija nakam ho to saaf batao ke kaam nahi ho saka aur wajah batao. Kabhi jhoot mat bolo.";
+var AG = {
+ whatsapp_reader:{n:"WhatsApp Reader",e:"📥",act:1,r:"phone par WhatsApp khol kar chats parhta hai aur batata hai kis ka kya message hai"},
+ whatsapp_sender:{n:"WhatsApp Sender",e:"📤",act:1,r:"phone par WhatsApp mein kisi ki chat kholta hai aur message bhejta hai"},
+ product_collector:{n:"Product Collector",e:"📦",act:1,r:"WhatsApp broadcast ya chat se products aur un ki price parhta hai"},
+ seo_title:{n:"SEO Title",e:"🔍",r:"Daraz products ke SEO titles likhta hai"},
+ pricing:{n:"Pricing",e:"💰",act:1,r:"phone ki Daraz calculator app chala kar price set karta hai"},
+ listing:{n:"Daraz Listing",e:"🛒",act:1,r:"phone par Daraz Seller Center app mein product list karta hai"},
+ youtube_seo:{n:"YouTube SEO",e:"📈",r:"YouTube title, description aur tags likhta hai"},
+ script_writer:{n:"Script Writer",e:"🎬",r:"YouTube videos ki scripts likhta hai"},
+ youtube_upload:{n:"YouTube Upload",e:"📺",act:1,r:"phone par YouTube ya YouTube Studio app mein video upload ya channel ka kaam karta hai"},
+ doc_reader:{n:"Document Reader",e:"📄",r:"upload ki hui file ya tasveer ko parh kar samjhata hai"}
+};
+var MOODS={khush:["😊","#35e08a"],udaas:["😢","#6a8dff"],jazbati:["🥹","#ff7ac8"],pareshan:["😟","#ffb347"],hairan:["😲","#c58bff"],pursukoon:["😌","#00d4ff"]};
+function $(i){return document.getElementById(i);}
+var chat=[],wa=[],busy=false,cancelled=false,voiceOn=true,hasFile=false,cbs={},cid=0,stTimer=null;
+
+function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+chat=load("zc",[]);wa=load("zw",[]);voiceOn=load("zv",true);
+
+function addMsg(c,x,store){
+  var d=document.createElement("div");d.className="m "+c;d.textContent=x;$("chat").appendChild(d);
+  var p=$("p-voice");p.scrollTop=p.scrollHeight;
+  if(store!==false){chat.push([c,x]);if(chat.length>120)chat.shift();save("zc",chat);}
+  return d;
+}
+function sysMsg(x){var d=document.createElement("div");d.className="m s";d.textContent=x;$("chat").appendChild(d);$("p-voice").scrollTop=1e6;}
+function renderChat(){$("chat").innerHTML="";chat.forEach(function(m){addMsg(m[0],m[1],false);});}
+function setMood(m){var v=MOODS[m]||MOODS.pursukoon;document.documentElement.style.setProperty("--glow",v[1]);$("moodtag").textContent=v[0]+" "+(MOODS[m]?m:"pursukoon");}
+function setState(s,txt){var o=$("ow");o.className="orbwrap "+s;$("state").textContent=txt;}
+function showErr(x){$("err").textContent=x||"";}
+
+/* office */
+function buildOffice(){
+  var o=$("office");o.innerHTML="";
+  Object.keys(AG).forEach(function(k){
+    var d=document.createElement("div");d.className="desk";d.id="d-"+k;
+    d.innerHTML='<div class="av">'+AG[k].e+'</div><div><div class="dn">'+AG[k].n+'</div><div class="dt" id="t-'+k+'">Khali baitha hai</div></div><div class="led"></div>';
+    o.appendChild(d);
+  });
+}
+function deskSet(k,cls,txt){var d=$("d-"+k);if(!d)return;d.className="desk "+cls;$("t-"+k).textContent=txt;OF.set(k,cls,txt);}
+function tlog(x){var d=document.createElement("div");d.className="note";d.textContent=x;$("tlog").prepend(d);}
+
+/* phone control */
+var pcb={},curAgent="";
+function phone(goal){
+  return new Promise(function(res){
+    if(!A){res("ERR: Yeh sirf app ke andar chalta hai");return;}
+    if(!A.accessOn()){res("ERR: Phone control band hai. Settings mein Phone control on karein");return;}
+    var id=++cid;pcb[id]=res;A.runTask(id,goal);
+  });
+}
+window.onTaskDone=function(id,t){var c=pcb[id];delete pcb[id];if(c)c(t);};
+window.onStep=function(t){tlog("→ "+t);if(curAgent){var e=$("t-"+curAgent);if(e)e.textContent=t;OF.say(curAgent,t);}};
+
+/* pixel office */
+var OF=(function(){
+  var cv=$("cv"),cx=cv.getContext("2d"),W=340,H=250;cv.width=W;cv.height=H;
+  var keys=Object.keys(AG),cols=["#ff8a65","#4fc3f7","#aed581","#ba68c8","#ffd54f","#4db6ac","#f06292","#90a4ae","#a1887f","#7986cb"];
+  var desks=keys.map(function(k,i){return{x:12+(i%5)*65,y:20+Math.floor(i/5)*68};});
+  var ppl=keys.map(function(k,i){return{k:k,col:cols[i],x:30+Math.random()*280,y:178+Math.random()*50,tx:0,ty:0,st:"idle",wait:i*20,bub:"",bt:0,mv:false};});
+  function idx(k){return keys.indexOf(k);}
+  function set(k,cls,txt){var p=ppl[idx(k)];if(!p)return;
+    if(cls==="work"){p.st="work";p.bub=txt||"";}
+    else if(cls==="done"){p.st="done";p.bt=260;p.bub="✓ Ho gaya";}
+    else if(cls==="err"){p.st="err";p.bt=260;p.bub="! Masla";}
+    else{p.st="idle";p.bub="";p.wait=10;}
+  }
+  function say(k,t){var p=ppl[idx(k)];if(p)p.bub=t;}
+  function update(){
+    ppl.forEach(function(p,i){
+      var d=desks[i];
+      if(p.st==="work"||p.st==="done"||p.st==="err"){p.tx=d.x+22;p.ty=d.y+38;
+        if((p.st==="done"||p.st==="err")&&Math.hypot(p.tx-p.x,p.ty-p.y)<2){if(--p.bt<=0){p.st="idle";p.bub="";p.wait=30;}}
+      }else{
+        if(p.wait>0){p.wait--;}
+        else if(Math.hypot(p.tx-p.x,p.ty-p.y)<2){p.tx=14+Math.random()*312;p.ty=172+Math.random()*58;p.wait=40+Math.random()*200;}
+      }
+      var dx=p.tx-p.x,dy=p.ty-p.y,dist=Math.hypot(dx,dy);
+      p.mv=dist>2;
+      if(p.mv){var sp=(p.st==="work")?1.6:0.7;p.x+=dx/dist*sp;p.y+=dy/dist*sp;}
+    });
+  }
+  function rect(c,x,y,w,h){cx.fillStyle=c;cx.fillRect(Math.round(x),Math.round(y),w,h);}
+  function drawPerson(p,t){
+    var x=Math.round(p.x),y=Math.round(p.y);
+    var bob=p.mv?(Math.floor(t/140)%2):((p.st==="work")?(Math.floor(t/110)%2):0);
+    rect("#0007",x-4,y+12,10,3);
+    rect("#2b2f4a",x-3,y+8,3,4);rect("#2b2f4a",x+1,y+8,3,4);
+    rect(p.col,x-4,y-bob,9,9);
+    rect("#f2c9a0",x-3,y-8-bob,7,8);
+    rect("#2a1b12",x-3,y-9-bob,7,3);
+    rect("#111",x-2,y-4-bob,1,1);rect("#111",x+2,y-4-bob,1,1);
+    if(p.st==="work"&&!p.mv){rect("#f2c9a0",x-6,y+2-bob,2,2);rect("#f2c9a0",x+5,y+2+bob-1,2,2);}
+  }
+  function bubble(p){
+    if(!p.bub)return;
+    var t=p.bub.length>22?p.bub.slice(0,21)+"…":p.bub;
+    cx.font="8px monospace";var w=cx.measureText(t).width+8;
+    var bx=Math.max(2,Math.min(W-w-2,p.x-w/2)),by=p.y-26;
+    rect(p.st==="err"?"#ff5470":(p.st==="done"?"#35e08a":"#e8f1ff"),bx,by,w,12);
+    cx.fillStyle="#08101f";cx.fillText(t,bx+4,by+9);
+  }
+  function draw(t){
+    rect("#0b1426",0,0,W,H);
+    for(var gx=0;gx<W;gx+=20)for(var gy=0;gy<H;gy+=20)if((gx+gy)/20%2===0)rect("#0d1a30",gx,gy,20,20);
+    rect("#16243f",0,0,W,14);
+    desks.forEach(function(d,i){
+      rect("#5a3d2b",d.x,d.y,50,24);rect("#7a5640",d.x,d.y,50,4);
+      rect("#1b2a44",d.x+16,d.y-8,18,12);rect(ppl[i].st==="work"?"#00d4ff":"#2f4a73",d.x+18,d.y-6,14,8);
+      rect("#2a3350",d.x+18,d.y+28,10,8);
+    });
+    rect("#3a2d57",20,160,90,12);rect("#4a3a6e",20,152,90,10);
+    rect("#2a7a4b",290,160,16,22);rect("#3aa468",292,154,12,10);
+    rect("#4fc3f7",250,200,10,20);rect("#e8f1ff",251,196,8,6);
+    ppl.slice().sort(function(a,b){return a.y-b.y;}).forEach(function(p){drawPerson(p,t);});
+    ppl.forEach(bubble);
+  }
+  function loop(t){
+    if($("p-agents").classList.contains("on")){update();draw(t);}
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+  return{set:set,say:say};
+})();
+
+/* gemini bridge */
+function gem(prompt,useFile){
+  return new Promise(function(res){
+    if(!A){res("ERR: Yeh page sirf Zonic app ke andar chalta hai");return;}
+    var id=++cid;cbs[id]=res;A.gemini(id,prompt,!!useFile);
+  });
+}
+window.onGemini=function(id,t){var c=cbs[id];delete cbs[id];if(c)c(t);};
+
+function speak(x){
+  if(!A||!voiceOn)return;
+  A.speak(x);setState("speak","Bol raha hun…");
+  clearTimeout(stTimer);stTimer=setTimeout(function(){if(!busy)setState("","Taiyar hun");},Math.min(25000,x.length*75));
+}
+function parse(s){try{return JSON.parse(s.slice(s.indexOf("{"),s.lastIndexOf("}")+1));}catch(e){return null;}}
+function isErr(s){return typeof s==="string"&&s.indexOf("ERR:")===0;}
+
+async function ask(text){
+  text=(text||"").trim();
+  if(!text||busy)return;
+  showErr("");
+  busy=true;cancelled=false;
+  addMsg("u",text);
+  setState("think","Soch raha hun…");
+  var plan=null,useFile=hasFile;
+  if(useFile){
+    plan={emotion:"pursukoon",say:"Theek hai, main document dekhta hun.",tasks:[{agent:"doc_reader",task:text}]};
+  }else{
+    var ctx=chat.slice(-10).map(function(m){return (m[0]==="u"?"User: ":"Zonic: ")+m[1];}).join("\n");
+    var list=Object.keys(AG).map(function(k){return "- "+k+": "+AG[k].r;}).join("\n");
+    var out=await gem(PERSONA+"\nTumhari team:\n"+list+"\n\nBaat cheet:\n"+ctx+"\n\nFaisla karo. Sirf JSON do, aur kuch nahi: {\"emotion\":\"khush|udaas|jazbati|pareshan|hairan|pursukoon\",\"say\":\"Roman Urdu jumla jis mein apni feeling ho; agar agent ki zaroorat nahi to yahi poora jawab hai\",\"tasks\":[{\"agent\":\"agent_name\",\"task\":\"English mein saaf kaam\"}]}. 0 se 3 tasks. Sirf tab agent use karo jab sach mein zaroorat ho.",false);
+    if(isErr(out)){addMsg("z","Maaf kijiye, masla aa gaya. "+out.slice(5,120),false);showErr(out.slice(0,140));done();return;}
+    plan=parse(out)||{emotion:"pursukoon",say:out.slice(0,400),tasks:[]};
+  }
+  if(cancelled){done();return;}
+  setMood(plan.emotion);
+  addMsg("z",plan.say||"");speak(plan.say||"");
+  var tasks=(plan.tasks||[]).filter(function(t){return AG[t.agent];}).slice(0,4);
+  if(tasks.length){
+    sysMsg("Zonic ne kaam agents ko de diya…");
+    var res=[];
+    for(var i=0;i<tasks.length;i++){
+      if(cancelled)break;
+      var t=tasks[i],g=AG[t.agent];curAgent=t.agent;
+      deskSet(t.agent,"work",t.task);tlog(g.n+": shuru - "+t.task);
+      var prev=res.length?("\nPichle agents ka natija:\n"+res.join("\n")):"";
+      var r;
+      if(g.act){r=await phone(t.task+prev);}
+      else{r=await gem("Tum "+g.n+" agent ho ("+g.r+"). Roman Urdu mein, 90 alfaz se kam. Kaam: "+t.task+prev,useFile&&t.agent==="doc_reader");}
+      if(isErr(r)){deskSet(t.agent,"err","Masla: "+r.slice(5,50));tlog(g.n+": "+r.slice(0,120));res.push(g.n+": kaam nahi ho saka ("+r.slice(5,100)+")");continue;}
+      deskSet(t.agent,"done","Kaam mukammal");tlog(g.n+": mukammal");res.push(g.n+" ka natija (kaam ho gaya): "+r);
+    }
+    if(cancelled){done();return;}
+    sysMsg("Agents ne kaam mukammal kar diya");
+    var fin=await gem(PERSONA+"\nUser ne kaha: "+text+"\nAgents ke natije:\n"+res.join("\n")+"\n\nAb user ko bolo: pehle ek jumle mein apni feeling, phir kaam ka nichor. 80 alfaz se kam.",false);
+    if(cancelled){done();return;}
+    if(isErr(fin)){fin="Agents ne kaam kar diya lekin main khulasa nahi bana saka. Dobara koshish karein.";}
+    addMsg("z",fin);speak(fin);
+  }
+  if(useFile){hasFile=false;if(A)A.clearFile();$("chip").style.display="none";}
+  done();
+}
+function done(){busy=false;if(!$("ow").className.match(/speak/))setState("","Taiyar hun");}
+
+/* voice */
+$("mic").onclick=function(){
+  if(!A){showErr("Mic sirf app ke andar chalta hai");return;}
+  showErr("");$("mic").classList.add("on");setState("listen","Sun raha hun… bolein");A.stopSpeak();A.listen();
+};
+window.onVoice=function(t){$("mic").classList.remove("on");setState("","Taiyar hun");ask(t);};
+window.onVoiceErr=function(m){$("mic").classList.remove("on");setState("","Taiyar hun");showErr(m);};
+
+/* files */
+$("att").onclick=function(){if(A)A.pickFile();else showErr("Upload sirf app ke andar chalta hai");};
+window.onFile=function(n){hasFile=true;var c=$("chip");c.style.display="block";c.innerHTML="";var s=document.createElement("span");s.textContent="📄 "+n+"  ✕";s.onclick=function(){hasFile=false;if(A)A.clearFile();c.style.display="none";};c.appendChild(s);};
+
+/* whatsapp */
+function renderNotes(){
+  var n=$("notes");n.innerHTML="";
+  if(!wa.length){n.innerHTML='<div class="note"><b>WhatsApp</b>Abhi koi message nahi aaya. Settings mein WhatsApp access allow karein.</div>';return;}
+  wa.slice().reverse().forEach(function(m){var d=document.createElement("div");d.className="note";var b=document.createElement("b");b.textContent=m[0]+"  ·  "+m[2];d.appendChild(b);d.appendChild(document.createTextNode(m[1]));n.appendChild(d);});
+}
+window.onWhatsApp=function(who,msg){
+  var t=new Date();wa.push([who,msg,t.getHours()+":"+("0"+t.getMinutes()).slice(-2)]);if(wa.length>60)wa.shift();save("zw",wa);renderNotes();
+  sysMsg("WhatsApp: "+who+" ne likha: "+msg);
+};
+$("sum").onclick=function(){
+  if(!wa.length){showErr("Abhi koi WhatsApp message nahi aaya");return;}
+  tab("voice");ask("Mere in WhatsApp messages ka khulasa batao aur kis ko jawab dena zaroori hai:\n"+wa.slice(-15).map(function(m){return m[0]+": "+m[1];}).join("\n"));
+};
+
+/* ui */
+function tab(n){
+  document.querySelectorAll(".tabs button").forEach(function(b){b.classList.toggle("on",b.dataset.t===n);});
+  document.querySelectorAll(".pane").forEach(function(p){p.classList.toggle("on",p.id==="p-"+n);});
+}
+document.querySelectorAll(".tabs button").forEach(function(b){b.onclick=function(){tab(b.dataset.t);};});
+$("term").onclick=function(){cancelled=true;if(A){A.stopSpeak();A.cancelTask();}busy=false;Object.keys(AG).forEach(function(k){deskSet(k,"","Khali baitha hai");});setState("","Rok diya");sysMsg("Zonic ne sab kaam rok diya");};
+$("f").addEventListener("submit",function(e){e.preventDefault();var v=$("t").value;$("t").value="";$("t").style.height="auto";ask(v);});
+$("t").addEventListener("input",function(){this.style.height="auto";this.style.height=Math.min(this.scrollHeight,90)+"px";});
+function sheet(s){$("sheet").classList.toggle("show",s);if(s){$("ks").textContent=(A&&A.getKey().length>0)?"✅ Key save hai":"Key abhi save nahi hai";$("vo").textContent=voiceOn?"Awaaz: ON":"Awaaz: OFF";$("acc").textContent=(A&&A.accessOn())?"Phone control: ON ✅":"Phone control (Accessibility) on karein";}}
+$("gear").onclick=function(){sheet(true);};$("cls").onclick=function(){sheet(false);};
+$("ksave").onclick=function(){var k=$("key").value.trim();if(k&&A){A.setKey(k);$("key").value="";}sheet(true);};
+$("wa").onclick=function(){if(A)A.notifSettings();};
+$("acc").onclick=function(){if(A)A.openAccess();};
+$("vo").onclick=function(){voiceOn=!voiceOn;save("zv",voiceOn);if(!voiceOn&&A)A.stopSpeak();$("vo").textContent=voiceOn?"Awaaz: ON":"Awaaz: OFF";};
+$("clr").onclick=function(){chat=[];save("zc",chat);renderChat();sheet(false);};
+
+buildOffice();renderNotes();renderChat();
+if(!chat.length){addMsg("z","Assalam o Alaikum! Main Zonic hun, aap ka apna AI dost. Mere saath 10 agents ki team hai. Aap bolein ya likhein, main kaam un ko dunga aur aap ko awaaz mein bata dunga. Aap se milke bohat khushi hui!");}
+if(A&&!A.getKey()){sysMsg("Pehle ⚙ Settings mein Gemini key save karein.");}
+</script>
+</body></html>
