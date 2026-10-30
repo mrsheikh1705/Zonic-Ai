@@ -1,154 +1,232 @@
 package com.zonic.ai
 
-import android.content.SharedPreferences
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
-import android.graphics.Typeface
 import android.os.Bundle
-import android.view.ViewGroup
-import android.widget.Button
-import android.widget.EditText
-import android.widget.LinearLayout
-import android.widget.ScrollView
-import android.widget.TextView
-import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import android.os.Handler
+import android.os.Looper
+import android.provider.OpenableColumns
+import android.provider.Settings
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
+import android.util.Base64
+import android.webkit.JavascriptInterface
+import android.webkit.WebView
+import org.json.JSONObject
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : Activity() {
+    private lateinit var web: WebView
+    private val main = Handler(Looper.getMainLooper())
+    private var recognizer: SpeechRecognizer? = null
+    private var pendingMic = false
+    private var fileMime: String? = null
+    private var fileB64: String? = null
 
-    private lateinit var sharedPreferences: SharedPreferences
+    private fun js(code: String) {
+        main.post { web.evaluateJavascript(code, null) }
+    }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        
-        val linearLayout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.parseColor("#0B0F19"))
-            setPadding(32, 32, 32, 32)
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
+    @SuppressLint("SetJavaScriptEnabled")
+    override fun onCreate(b: Bundle?) {
+        super.onCreate(b)
+        web = WebView(this)
+        web.settings.javaScriptEnabled = true
+        web.settings.domStorageEnabled = true
+        web.setBackgroundColor(Color.parseColor("#070b14"))
+        web.addJavascriptInterface(Bridge(), "Android")
+        web.loadUrl("file:///android_asset/index.html")
+        setContentView(web)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Bus.onMsg = { who, msg ->
+            js("window.onWhatsApp(" + JSONObject.quote(who) + "," + JSONObject.quote(msg) + ")")
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Bus.onMsg = null
+    }
+
+    private fun startRec() {
+        main.post {
+            if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+                val i = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+                i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ur-PK")
+                try {
+                    startActivityForResult(i, 1)
+                } catch (e: Exception) {
+                    js("window.onVoiceErr('Is phone par voice input available nahi')")
+                }
+                return@post
+            }
+            recognizer?.destroy()
+            val r = SpeechRecognizer.createSpeechRecognizer(this)
+            r.setRecognitionListener(object : RecognitionListener {
+                override fun onReadyForSpeech(p: Bundle?) {}
+                override fun onBeginningOfSpeech() {}
+                override fun onRmsChanged(v: Float) {}
+                override fun onBufferReceived(b: ByteArray?) {}
+                override fun onEndOfSpeech() {}
+                override fun onEvent(t: Int, p: Bundle?) {}
+                override fun onPartialResults(p: Bundle?) {}
+                override fun onError(code: Int) {
+                    js("window.onVoiceErr('Awaaz samajh nahi aayi, dobara bolein (code $code)')")
+                }
+                override fun onResults(res: Bundle?) {
+                    val t = res?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
+                    if (t != null) js("window.onVoice(" + JSONObject.quote(t) + ")")
+                    else js("window.onVoiceErr('Kuch sunai nahi diya')")
+                }
+            })
+            val i = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+            i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ur-PK")
+            r.startListening(i)
+            recognizer = r
+        }
+    }
+
+    override fun onRequestPermissionsResult(code: Int, perms: Array<out String>, res: IntArray) {
+        super.onRequestPermissionsResult(code, perms, res)
+        if (code == 7 && pendingMic) {
+            pendingMic = false
+            if (res.isNotEmpty() && res[0] == PackageManager.PERMISSION_GRANTED) startRec()
+            else js("window.onVoiceErr('Mic ki ijazat nahi mili')")
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode != RESULT_OK) return
+        if (requestCode == 1) {
+            val t = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+            if (t != null) js("window.onVoice(" + JSONObject.quote(t) + ")")
+        } else if (requestCode == 2) {
+            val uri = data?.data ?: return
+            Thread {
+                try {
+                    var name = "document"
+                    contentResolver.query(uri, null, null, null, null)?.use {
+                        if (it.moveToFirst()) {
+                            val ix = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                            if (ix >= 0) name = it.getString(ix)
+                        }
+                    }
+                    val bytes = contentResolver.openInputStream(uri)!!.use { it.readBytes() }
+                    if (bytes.size > 8_000_000) {
+                        js("window.onVoiceErr('File bohat badi hai (8MB se kam rakhein)')")
+                    } else {
+                        fileMime = contentResolver.getType(uri) ?: "application/octet-stream"
+                        fileB64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
+                        js("window.onFile(" + JSONObject.quote(name) + ")")
+                    }
+                } catch (e: Exception) {
+                    js("window.onVoiceErr('File nahi khul saki')")
+                }
+            }.start()
+        }
+    }
+
+    inner class Bridge {
+        @JavascriptInterface
+        fun getKey(): String = getSharedPreferences("z", MODE_PRIVATE).getString("key", "") ?: ""
+
+        @JavascriptInterface
+        fun setKey(k: String) {
+            getSharedPreferences("z", MODE_PRIVATE).edit().putString("key", k.trim()).apply()
         }
 
-        val titleText = TextView(this).apply {
-            text = "ZONIC AI (JARVIS)"
-            textSize = 20f
-            setTextColor(Color.parseColor("#00E5FF"))
-            setTypeface(null, Typeface.BOLD)
-        }
-        linearLayout.addView(titleText)
-
-        val statusText = TextView(this).apply {
-            text = "Autonomous Multi-Agent Online"
-            textSize = 12f
-            setTextColor(Color.parseColor("#00E676"))
-            setPadding(0, 0, 0, 24)
-        }
-        linearLayout.addView(statusText)
-
-        val keyLayout = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
+        @JavascriptInterface
+        fun speak(t: String) {
+            Speaker.say(this@MainActivity, t)
         }
 
-        val apiKeyInput = EditText(this).apply {
-            hint = "Gemini API Key yahan dalein..."
-            setTextColor(Color.WHITE)
-            setHintTextColor(Color.parseColor("#757575"))
-            textSize = 13f
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            )
+        @JavascriptInterface
+        fun stopSpeak() {
+            Speaker.stop()
         }
-        keyLayout.addView(apiKeyInput)
 
-        val btnSaveKey = Button(this).apply {
-            text = "SAVE"
-            setBackgroundColor(Color.parseColor("#00E5FF"))
-            setTextColor(Color.parseColor("#0B0F19"))
-        }
-        keyLayout.addView(btnSaveKey)
-        linearLayout.addView(keyLayout)
-
-        val scrollView = ScrollView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                0,
-                1f
-            ).apply {
-                setMargins(0, 24, 0, 24)
+        @JavascriptInterface
+        fun listen() {
+            main.post {
+                if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                    pendingMic = true
+                    requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), 7)
+                } else {
+                    startRec()
+                }
             }
         }
 
-        val chatResponseBox = TextView(this).apply {
-            text = "Zonic: Assalam o Alaikum! Main aapka autonomous assistant hoon. WhatsApp, Daraz, aur baqi saare tasks ke liye tayyar hoon. API key enter karein aur mujhe hukm dein!"
-            setTextColor(Color.parseColor("#E0E0E0"))
-            textSize = 14f
-        }
-        scrollView.addView(chatResponseBox)
-        linearLayout.addView(scrollView)
-
-        val inputLayout = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
+        @JavascriptInterface
+        fun notifSettings() {
+            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
 
-        val userInputBox = EditText(this).apply {
-            hint = "Zonic ko hukum dein..."
-            setTextColor(Color.WHITE)
-            setHintTextColor(Color.parseColor("#757575"))
-            textSize = 14f
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            )
-        }
-        inputLayout.addView(userInputBox)
-
-        val btnSend = Button(this).apply {
-            text = "SEND"
-            setBackgroundColor(Color.parseColor("#00E5FF"))
-            setTextColor(Color.parseColor("#0B0F19"))
-        }
-        inputLayout.addView(btnSend)
-        linearLayout.addView(inputLayout)
-
-        setContentView(linearLayout)
-
-        sharedPreferences = getSharedPreferences("ZonicPrefs", MODE_PRIVATE)
-        val savedKey = sharedPreferences.getString("gemini_key", "")
-        if (!savedKey.isNullOrEmpty()) {
-            apiKeyInput.setText(savedKey)
-            chatResponseBox.text = "Zonic: API Key pehle se saved hai. Hukam dein!"
-        }
-
-        btnSaveKey.setOnClickListener {
-            val key = apiKeyInput.text.toString().trim()
-            if (key.isNotEmpty()) {
-                sharedPreferences.edit().putString("gemini_key", key).apply()
-                Toast.makeText(this, "API Key Save Ho Gayi!", Toast.LENGTH_SHORT).show()
-                chatResponseBox.text = "Zonic: Key save ho chuki hai. Ab aap WhatsApp, Daraz ya kisi bhi kaam ke liye keh sakte hain."
-            } else {
-                Toast.makeText(this, "Pehle valid key dalein!", Toast.LENGTH_SHORT).show()
+        @JavascriptInterface
+        fun pickFile() {
+            main.post {
+                val i = Intent(Intent.ACTION_OPEN_DOCUMENT)
+                i.addCategory(Intent.CATEGORY_OPENABLE)
+                i.type = "*/*"
+                i.putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/pdf", "image/*", "text/*"))
+                startActivityForResult(i, 2)
             }
         }
 
-        btnSend.setOnClickListener {
-            val query = userInputBox.text.toString().trim()
-            if (query.isNotEmpty()) {
-                chatResponseBox.append("\n\nYou: $query")
-                chatResponseBox.append("\n\nZonic: Aapka hukm mil gaya hai. ' $query ' par kaam shuru kiya ja raha hai...")
-                userInputBox.text.clear()
-            }
+        @JavascriptInterface
+        fun clearFile() {
+            fileMime = null
+            fileB64 = null
+        }
+
+        @JavascriptInterface
+        fun accessOn(): Boolean = ZonicAccess.inst != null
+
+        @JavascriptInterface
+        fun openAccess() {
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
+
+        @JavascriptInterface
+        fun cancelTask() {
+            PhoneAgent.cancel = true
+        }
+
+        @JavascriptInterface
+        fun runTask(id: Int, goal: String) {
+            val key = getKey()
+            Thread {
+                val out = if (key.isEmpty()) "ERR: Pehle Settings mein Gemini key save karein"
+                else PhoneAgent.run(key, goal) { st -> js("window.onStep(" + JSONObject.quote(st) + ")") }
+                try {
+                    val i = Intent(this@MainActivity, MainActivity::class.java)
+                    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                    startActivity(i)
+                } catch (e: Exception) {
+                }
+                js("window.onTaskDone($id," + JSONObject.quote(out) + ")")
+            }.start()
+        }
+
+        @JavascriptInterface
+        fun gemini(id: Int, prompt: String, useFile: Boolean) {
+            val key = getKey()
+            val m = if (useFile) fileMime else null
+            val f = if (useFile) fileB64 else null
+            Thread {
+                val out = if (key.isEmpty()) "ERR: Pehle Settings mein Gemini key save karein" else Gemini.ask(key, prompt, m, f)
+                js("window.onGemini($id," + JSONObject.quote(out) + ")")
+            }.start()
         }
     }
 }

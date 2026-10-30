@@ -27,4 +27,9 @@ object Speaker {
         val t = tts
         if (ready && t != null) t.speak(text, TextToSpeech.QUEUE_ADD, null, null) else pending.add(text)
     }
+
+    fun stop() {
+        pending.clear()
+        tts?.stop()
+    }
 }

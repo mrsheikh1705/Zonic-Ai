@@ -13,6 +13,6 @@ class WhatsAppListener : NotificationListenerService() {
         val who = e.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: return
         val msg = e.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: return
         Speaker.say(applicationContext, "$who ka WhatsApp message aaya hai. Unhon ne likha: $msg")
-        Bus.onMsg?.invoke("WhatsApp - $who: $msg")
+        Bus.onMsg?.invoke(who, msg)
     }
 }
